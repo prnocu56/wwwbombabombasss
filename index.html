@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>HubLand Fishing</title>
+<style>
+:root{--bg:#07121f;--panel:#0c1c2c;--panel2:#10263a;--text:#edf6ff;--muted:#91a7bb;--accent:#8b5cf6;--accent2:#6d45e8;--water:#176b8c;--water2:#1d7896;--grass:#17402d;--sand:#c5a66b;--danger:#ef6a6a;--good:#70e1a4}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06101a;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}button{font:inherit;color:inherit;border:0;cursor:pointer}#app{width:100%;height:100%;position:relative;background:#081421}.screen{position:absolute;inset:0;display:none}.screen.active{display:block}.topbar{position:absolute;top:0;left:0;right:0;height:70px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;z-index:20;background:linear-gradient(180deg,rgba(5,12,21,.92),rgba(5,12,21,.18),transparent)}.brand{font-weight:900;letter-spacing:.08em;font-size:15px}.money{background:rgba(8,19,31,.82);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:9px 13px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+#map{position:absolute;inset:0;overflow:hidden;background:linear-gradient(160deg,#194f3b 0 18%,#1a5b42 18% 34%,#205f45 34% 100%)}.water{position:absolute;left:17%;right:0;top:14%;bottom:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 2px,transparent 2px 30px),linear-gradient(135deg,#176b8b,#0d526f 70%,#0c4a65);clip-path:polygon(9% 0,100% 0,100% 100%,0 100%,0 35%,6% 30%,4% 18%)}.island{position:absolute;background:#20563c;border:2px solid rgba(255,255,255,.035);box-shadow:0 15px 45px rgba(0,0,0,.18)}.island.a{width:39%;height:30%;left:0;top:7%;border-radius:0 34% 45% 0}.island.b{width:25%;height:25%;right:5%;top:47%;border-radius:50% 35% 45% 50%}.island.c{width:28%;height:19%;left:14%;bottom:4%;border-radius:50% 50% 25% 30%}.sand{position:absolute;background:#c3a86f;opacity:.92}.sand.s1{width:34%;height:11%;left:7%;top:29%;border-radius:0 55% 55% 0}.sand.s2{width:18%;height:7%;right:8%;top:63%;border-radius:50%}.sand.s3{width:20%;height:8%;left:23%;bottom:10%;border-radius:50%}.dock{position:absolute;width:88px;height:16px;background:#725036;border-radius:5px;transform:rotate(-9deg);box-shadow:0 8px 10px rgba(0,0,0,.2)}.dock.d1{left:31%;top:31%}.dock.d2{right:18%;top:65%}.fishspot{position:absolute;width:56px;height:30px;border-radius:50%;background:rgba(122,225,255,.24);border:2px solid rgba(190,246,255,.75);box-shadow:0 0 0 8px rgba(109,220,255,.04),0 0 24px rgba(93,210,255,.28);animation:pulse 2.2s infinite;z-index:4}.fishspot:after{content:'⌁';position:absolute;left:17px;top:-2px;font-size:25px;color:#d6f8ff}.fs1{left:40%;top:30%}.fs2{left:57%;top:52%}.fs3{left:73%;top:25%}.fs4{left:30%;top:70%}.fs5{left:83%;top:77%}@keyframes pulse{50%{transform:scale(1.06);opacity:.75}}
+#player{position:absolute;width:32px;height:32px;border-radius:50%;border:3px solid rgba(255,255,255,.8);box-shadow:0 8px 22px rgba(0,0,0,.3);z-index:10;left:28%;top:48%;transition:background .15s}.joystick{position:absolute;left:20px;bottom:24px;width:126px;height:126px;border-radius:50%;background:rgba(5,15,25,.38);border:1px solid rgba(255,255,255,.12);z-index:30;touch-action:none}.stick{position:absolute;left:38px;top:38px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.35)}.hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(5,14,23,.78);padding:10px 14px;border-radius:12px;color:#bcd0df;font-size:12px;z-index:25;pointer-events:none;opacity:.9}.toast{position:absolute;left:50%;top:76px;transform:translate(-50%,-20px);background:#0d2134;border:1px solid rgba(255,255,255,.1);padding:12px 16px;border-radius:12px;z-index:100;opacity:0;pointer-events:none;transition:.25s;font-weight:700;box-shadow:0 15px 40px rgba(0,0,0,.3)}.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:absolute;inset:0;background:rgba(2,7,13,.66);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:80;padding:20px}.panel{width:min(480px,94vw);max-height:88vh;overflow:auto;background:linear-gradient(180deg,#102235,#0b1827);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:22px;box-shadow:0 25px 80px rgba(0,0,0,.45)}.panel h1{margin:0 0 8px;font-size:28px}.panel p{color:var(--muted);line-height:1.5}.mainBtns{display:grid;gap:10px;margin-top:24px}.primary,.secondary{width:100%;padding:13px 16px;border-radius:13px;font-weight:800}.primary{background:var(--accent)}.secondary{background:#172d42;border:1px solid rgba(255,255,255,.07)}.menuTitle{font-size:42px;font-weight:950;letter-spacing:-.05em;margin:0}.subtitle{color:#9cb1c4;margin-top:5px}.settingsRow{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.07)}.choices{display:flex;gap:7px;flex-wrap:wrap}.choice{background:#172d42;border:1px solid rgba(255,255,255,.06);padding:8px 10px;border-radius:10px}.choice.sel{background:#6844dc}.colors{display:flex;gap:8px;flex-wrap:wrap}.color{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.25)}.color.sel{outline:3px solid #fff;outline-offset:2px}
+#minigame{background:radial-gradient(circle at 50% 40%,#16344a,#081421 70%);z-index:70}.miniWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;padding:24px}.miniCard{width:min(700px,92vw);background:rgba(8,18,29,.88);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:24px;box-shadow:0 25px 70px rgba(0,0,0,.4)}.miniHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.difficulty{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#b5c8d8}.fishTitle{font-size:25px;font-weight:900}.track{position:relative;height:58px;background:#12283b;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}.safe{position:absolute;top:9px;height:40px;border-radius:10px;background:rgba(112,225,164,.27);border:1px solid rgba(112,225,164,.45)}.cursor{position:absolute;top:4px;width:8px;height:50px;border-radius:6px;background:#fff;box-shadow:0 0 20px rgba(255,255,255,.7)}.miniInfo{display:flex;justify-content:space-between;color:#9bb0c2;font-size:13px;margin-top:10px}.miniBtn{margin-top:18px;padding:12px 16px;border-radius:12px;background:#6f48eb;font-weight:900;width:100%}
+#rodShop .panel,#inventory .panel{width:min(720px,94vw)}.rodGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:18px}.rod{background:#0c1b2a;border:1px solid rgba(255,255,255,.07);border-radius:15px;padding:14px}.rodName{font-weight:900}.rodVisual{height:70px;border-radius:12px;margin:10px 0;background:linear-gradient(135deg,#ddd,#8b8b8b);position:relative;overflow:hidden}.rodVisual:after{content:'';position:absolute;width:75%;height:7px;background:#2a2018;left:12%;top:48%;border-radius:8px;box-shadow:0 0 0 2px rgba(255,255,255,.15)}.rod.electric .rodVisual{background:linear-gradient(135deg,#ffd82a,#a67600)}.rod.grass .rodVisual{background:linear-gradient(135deg,#5ecb69,#164b2b)}.rod.astral .rodVisual{background:radial-gradient(circle at 30% 30%,#6d4fe8,#070a17 65%);}.rodInfo{font-size:12px;color:#93a9bb;line-height:1.5}.buy{width:100%;padding:10px;border-radius:10px;background:#1a3146;margin-top:10px;font-weight:800}.buy:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:650px){.topbar{height:62px;padding:11px 13px}.menuTitle{font-size:36px}.hint{font-size:11px;max-width:70%;text-align:center}.joystick{width:112px;height:112px;left:16px;bottom:16px}.stick{left:33px;top:33px}.panel{padding:18px}.miniCard{padding:17px}.fishTitle{font-size:20px}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div id="app">
+<section id="menu" class="screen active">
+ <div class="modal" style="background:radial-gradient(circle at 70% 20%,rgba(111,72,235,.18),transparent 35%),linear-gradient(145deg,#06101a,#0b1827)">
+  <div class="panel">
+   <div class="menuTitle">Fishing</div><div class="subtitle">A HubLand game</div>
+   <div class="mainBtns"><button class="primary" id="playBtn">Play</button><button class="secondary" id="coopBtn">Co-op</button><button class="secondary" id="settingsBtn">Settings</button></div>
+  </div>
+ </div>
+</section>
+<section id="game" class="screen">
+ <div id="map"><div class="water"></div><div class="island a"></div><div class="island b"></div><div class="island c"></div><div class="sand s1"></div><div class="sand s2"></div><div class="sand s3"></div><div class="dock d1"></div><div class="dock d2"></div>
+  <div class="fishspot fs1"></div><div class="fishspot fs2"></div><div class="fishspot fs3"></div><div class="fishspot fs4"></div><div class="fishspot fs5"></div><div id="player"></div>
+ </div>
+ <div class="topbar"><div class="brand">HUBLAND • FISHING</div><div style="display:flex;align-items:center;gap:8px"><button class="secondary" id="inGameRodsBtn" style="padding:9px 12px;border-radius:12px">🪝 Rods</button><div class="money" id="money">$1,000</div></div></div>
+ <div class="hint">Move with the joystick. Tap a raised fishing spot to cast.</div>
+ <div class="joystick" id="joystick"><div class="stick" id="stick"></div></div>
+ <div class="toast" id="toast"></div>
+</section>
+<section id="minigame" class="screen">
+ <div class="miniWrap"><div class="miniCard"><div class="miniHeader"><div><div class="difficulty" id="difficultyLabel">Easy</div><div class="fishTitle">Catch the fish!</div></div><div id="rodLabel" class="difficulty">Starter Rod</div></div>
+ <div class="track" id="track"><div class="safe" id="safe"></div><div class="cursor" id="cursor"></div></div><div class="miniInfo"><span>Tap when the cursor is in the safe zone.</span><span id="miniTime">Ready</span></div><button class="miniBtn" id="catchBtn">Catch</button></div></div>
+</section>
+<section id="coop" class="screen"><div class="modal"><div class="panel"><h1>Co-op</h1><p>Play fishing together in a public server or with friends in a private room.</p><div class="mainBtns"><button class="primary" id="publicServerBtn">🌐 Public Server</button><button class="secondary" id="privateRoomBtn">🔒 Private Room</button><button class="secondary" id="joinRoomBtn">🔑 Join with Code</button><button class="secondary" id="coopBackBtn">Back</button></div><div id="coopStatus" class="tiny muted" style="margin-top:14px;text-align:center">Online multiplayer connection will be wired into the HubLand backend.</div></div></div></section>
+<section id="settings" class="screen"><div class="modal"><div class="panel"><h1>Settings</h1><p>Customize your display and player.</p>
+ <div class="settingsRow"><span>Display</span><div class="choices"><button class="choice sel" data-display="day">Day</button><button class="choice" data-display="night">Night</button></div></div>
+ <div class="settingsRow"><span>Player color</span><div class="colors" id="colors"></div></div>
+ <div class="mainBtns"><button class="primary" id="settingsDone">Done</button></div>
+ </div></div></section>
+<section id="rodShop" class="screen"><div class="modal"><div class="panel"><h1>Rods</h1><p>Better rods change the chance of getting each fishing minigame difficulty.</p><div class="rodGrid" id="rodGrid"></div><div class="mainBtns"><button class="secondary" id="rodsDone">Back</button></div></div></div></section>
+</div>
+<script>
+const fishes={
+ Normal:[['Shrimp',1.9],['Anchovy',5.8],['Atlantic Silverside',6.0],['Bass',6.1],['Blue Crab',6.2],['Blue Mackerel',6.3],['Mullet',6.4],['Salmon',6.5],['Sardine',6.6],['Sea Bream',6.7],['Sole',6.8],['Starfish',6.9],['Tune',7.0],['Whiting',7.1],['Cod',7.2],['Krill',7.6]],
+ Rare:[['Lobster',6.7],['Moon Jellyfish',7.0],['Parrotfish',7.4],['Purple Octopus',7.7],['Caretta Caretta',4.0],['Cauliflower Jellyfish',8.0],['Clownfish',8.1],['Eel',8.2],['Lionfish',8.4],['Mola Mola',8.5],['Seahorse',8.9],['Stingray',9.1]],
+ Legendary:[['Dragon Moray Eel',4.0],['Kraken',13.0],['Great Whale',14.0],['Nautilus',15.0],['Whale Shark',16.0],['İsonade',18.0]]
+};
+const tierMeta={Normal:{mult:1},Rare:{mult:3.4},Legendary:{mult:12}};
+const rods=[
+ {name:'Starter Rod',price:0,odds:[70,27,3],cls:'starter'},
+ {name:'Better Rod',price:100000,odds:[65,25,10],cls:'better'},
+ {name:'Electric Rod',price:500000,odds:[55,30,15],cls:'electric'},
+ {name:'Grass Rod',price:1000000,odds:[50,30,20],cls:'grass'},
+ {name:'Astral Rod',price:1000000000,odds:[30,35,40],cls:'astral'}
+];
+let state={money:1000,rod:0,color:null,display:'day'};
+const colors=['#ff6b6b','#ffb84d','#ffe066','#65d67a','#54c7ec','#6b8cff','#b778ff','#f07ac7','#f3f5f7','#6f7a86'];
+const firebaseConfig={apiKey:'AIzaSyCNiUkBWL3Swn0e3PyoWBxjvhM8_wPHRXs',authDomain:'ttoo124.firebaseapp.com',projectId:'ttoo124',storageBucket:'ttoo124.firebasestorage.app',messagingSenderId:'973946201796',appId:'1:973946201796:web:e3574c4d100be99bbbcb91',measurementId:'G-5MT78F9R1D'};
+const firebaseApp=firebase.initializeApp(firebaseConfig);
+const firebaseDb=firebase.firestore();
+const $=id=>document.getElementById(id);function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active')}
+let hubUid=null,hubUser=null,cloudReady=false,cloudLoadDone=false,fishingReq=0,fishingWait=new Map();
+function fmt(n){return '$'+Math.floor(n).toLocaleString('en-US')}
+function localSave(){localStorage.setItem('hublandFishingV1',JSON.stringify(state))}
+function save(){localSave();if(cloudReady)fishingRpc('SAVE',{state}).catch(()=>{})}
+function load(){try{Object.assign(state,JSON.parse(localStorage.getItem('hublandFishingV1')||'{}'))}catch(e){} if(!state.color)state.color=colors[Math.floor(Math.random()*colors.length)];updateUI();try{parent.postMessage({type:'HUBLAND_REQUEST_AUTH_CONTEXT'},'*')}catch(_){} }
+function fishingRpc(op,data={}){return new Promise((resolve,reject)=>{const requestId='f'+(++fishingReq)+'_'+Date.now();fishingWait.set(requestId,{resolve,reject});try{parent.postMessage({type:'FISHING_REQUEST',requestId,op,data},'*')}catch(e){fishingWait.delete(requestId);reject(e);return}setTimeout(()=>{const w=fishingWait.get(requestId);if(w){fishingWait.delete(requestId);reject(new Error('HubLand yanıt vermedi.'))}},10000)})}
+window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='HUBLAND_AUTH_CONTEXT'&&d.uid){hubUid=d.uid;hubUser={uid:d.uid,email:d.email||'',displayName:d.displayName||'Oyuncu'};cloudReady=true;if(!cloudLoadDone){cloudLoadDone=true;fishingRpc('LOAD').then(r=>{if(r?.state&&typeof r.state==='object'){Object.assign(state,r.state);if(!state.color)state.color=colors[Math.floor(Math.random()*colors.length)];updateUI();localSave()}else{fishingRpc('SAVE',{state}).catch(()=>{})}}).catch(()=>{})}}else if(d.type==='FISHING_RESPONSE'){const w=fishingWait.get(d.requestId);if(!w)return;fishingWait.delete(d.requestId);d.ok?w.resolve(d.data):w.reject(new Error(d.error||'Fishing cloud operation failed.'))}});
+function updateUI(){$('money').textContent=fmt(state.money);$('player').style.background=state.color;document.body.dataset.theme=state.display; if(state.display==='night'){$('map').style.filter='brightness(.72) saturate(.85)'}else{$('map').style.filter='none'}}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>el.classList.remove('show'),1800)}
+function normalize(arr){let s=arr.reduce((a,b)=>a+b[1],0);return arr.map(x=>[x[0],x[1]/s*100])}
+function weightedFish(tier){let a=normalize(fishes[tier]);let r=Math.random()*100,c=0;for(const [name,p] of a){c+=p;if(r<=c)return{name,tier,chance:p}}return{name:a.at(-1)[0],tier,chance:a.at(-1)[1]}}
+function priceForFish(f){return Math.max(25,Math.round(250*(50/f.chance)*tierMeta[f.tier].mult/10)*10)}
+function rollDifficulty(){let o=rods[state.rod].odds,r=Math.random()*100;return r<o[0]?['Easy',0]:r<o[0]+o[1]?['Medium',1]:['Hard',2]}
+let mini=null;
+function startFishing(){let [difficulty,idx]=rollDifficulty(); mini={difficulty,idx}; $('difficultyLabel').textContent=difficulty; $('rodLabel').textContent=rods[state.rod].name; const widths=[58,39,23]; const left=18+Math.random()*(100-widths[idx]-36); $('safe').style.left=left+'%';$('safe').style.width=widths[idx]+'%'; $('cursor').style.left='0%'; show('minigame'); startMiniLoop()}
+let miniRAF=null,miniX=0,miniDir=1,miniLast=performance.now();function startMiniLoop(){cancelAnimationFrame(miniRAF);miniX=0;miniDir=1;miniLast=performance.now();const speeds={Easy:.045,Medium:.075,Hard:.115};function loop(now){const dt=Math.min(40,now-miniLast);miniLast=now;miniX+=miniDir*speeds[mini.idx]*dt;if(miniX>=100){miniX=100;miniDir=-1}if(miniX<=0){miniX=0;miniDir=1}$('cursor').style.left=`calc(${miniX}% - 4px)`;$('miniTime').textContent=difficultyHint(mini.difficulty);miniRAF=requestAnimationFrame(loop)}miniRAF=requestAnimationFrame(loop)}function difficultyHint(d){return d==='Easy'?'Easy timing':d==='Medium'?'Medium timing':'Hard timing'}
+$('catchBtn').onclick=()=>{const cur=miniX/100*100,safe=$('safe');const l=parseFloat(safe.style.left),w=parseFloat(safe.style.width);cancelAnimationFrame(miniRAF);if(cur>=l&&cur<=l+w){const tier=mini.difficulty==='Easy'?'Normal':mini.difficulty==='Medium'?'Rare':'Legendary';const f=weightedFish(tier),price=priceForFish(f);state.money+=price;save();updateUI();toast(`Caught ${f.name}! +${fmt(price)}`);setTimeout(()=>show('game'),900)}else{toast('The fish got away!');setTimeout(()=>show('game'),700)}};
+function movePlayer(dx,dy){const p=$('player');let x=parseFloat(p.style.left)||28,y=parseFloat(p.style.top)||48;x+=dx;y+=dy;x=Math.max(2,Math.min(95,x));y=Math.max(10,Math.min(88,y));p.style.left=x+'%';p.style.top=y+'%'}
+const joy=$('joystick'),stick=$('stick');let joyActive=false;function joyMove(e){if(!joyActive)return;const r=joy.getBoundingClientRect();const px=e.touches?e.touches[0].clientX:e.clientX,py=e.touches?e.touches[0].clientY:e.clientY;let dx=px-(r.left+r.width/2),dy=py-(r.top+r.height/2);const max=35,dist=Math.hypot(dx,dy);if(dist>max){dx=dx/dist*max;dy=dy/dist*max}stick.style.transform=`translate(${dx}px,${dy}px)`;movePlayer(dx/max*.8,dy/max*.8)}function joyEnd(){joyActive=false;stick.style.transform=''}joy.addEventListener('pointerdown',e=>{joyActive=true;joyMove(e)});window.addEventListener('pointermove',joyMove);window.addEventListener('pointerup',joyEnd);joy.addEventListener('touchstart',e=>{joyActive=true;joyMove(e)},{passive:false});window.addEventListener('touchmove',e=>{if(joyActive)joyMove(e)},{passive:false});window.addEventListener('touchend',joyEnd);
+document.querySelectorAll('.fishspot').forEach(s=>s.addEventListener('click',startFishing));$('map').addEventListener('click',e=>{if(!e.target.classList.contains('fishspot')&&!e.target.closest('.joystick'))toast('Please tap a raised fishing spot to cast.')});
+$('playBtn').onclick=()=>show('game');
+$('coopBtn').onclick=()=>show('coop');
+$('settingsBtn').onclick=()=>show('settings');
+$('inGameRodsBtn').onclick=()=>{renderRods();show('rodShop')};
+$('settingsDone').onclick=()=>{save();updateUI();show('menu')};
+$('rodsDone').onclick=()=>show('game');
+$('coopBackBtn').onclick=()=>show('menu');
+$('publicServerBtn').onclick=()=>toast('Public server selection will be connected to HubLand online multiplayer.');
+$('privateRoomBtn').onclick=()=>toast('Private rooms will be connected to HubLand online multiplayer.');
+$('joinRoomBtn').onclick=()=>toast('Room-code joining will be connected to HubLand online multiplayer.');
+document.querySelectorAll('[data-display]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-display]').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');state.display=b.dataset.display;updateUI();save()});
+const colorBox=$('colors');colors.forEach(c=>{let b=document.createElement('button');b.className='color';b.style.background=c;b.onclick=()=>{state.color=c;document.querySelectorAll('.color').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');updateUI();save()};colorBox.appendChild(b)});
+function renderRods(){const box=$('rodGrid');box.innerHTML='';rods.forEach((r,i)=>{let d=document.createElement('div');d.className='rod '+r.cls;d.innerHTML=`<div class="rodName">${r.name}</div><div class="rodVisual"></div><div class="rodInfo">Easy ${r.odds[0]}% • Medium ${r.odds[1]}% • Hard ${r.odds[2]}%<br>${r.price?fmt(r.price):'Starting rod'}</div><button class="buy" ${i===state.rod||state.money<r.price?'disabled':''}>${i===state.rod?'Equipped':state.money>=r.price?'Buy':'Not enough money'}</button>`;d.querySelector('.buy').onclick=()=>{if(state.money>=r.price){state.money-=r.price;state.rod=i;save();updateUI();renderRods()}};box.appendChild(d)})}
+load();renderRods();
+</script>
+</body></html>
