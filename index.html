@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Fishing</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#82c9e6;font-family:Arial,sans-serif;color:#fff;touch-action:none}
+#game,canvas{position:fixed;inset:0;width:100%;height:100%}
+button{font:inherit;font-weight:900;border:0;border-radius:10px;cursor:pointer}
+#hud{position:fixed;inset:0;pointer-events:none}.btn{position:absolute;pointer-events:auto;padding:10px 14px;background:#0b1420d9;color:white}
+#settingsBtn{top:15px;left:15px}.money{position:absolute;top:15px;right:15px;background:#0b1420d9;padding:10px 15px;border-radius:10px;font-weight:900}
+#rodBtn{right:15px;bottom:15px}#coopHud{left:15px;bottom:15px}
+#joystick{position:absolute;left:18px;bottom:72px;width:126px;height:126px;border-radius:50%;background:#0b14204d;border:2px solid #ffffff38;pointer-events:auto}
+#stick{position:absolute;left:37px;top:37px;width:52px;height:52px;border-radius:50%;background:#fffC}
+#hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:#0b142099;padding:7px 11px;border-radius:8px;font-size:12px;font-weight:800}
+#message,#toast{position:fixed;left:50%;transform:translateX(-50%);background:#080e16dc;border-radius:11px;padding:12px 20px;font-weight:900;z-index:30;opacity:0;transition:.15s;pointer-events:none}
+#message{top:13%;font-size:21px;white-space:nowrap}#toast{bottom:13%}
+.shade{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
+.panel{width:min(890px,94vw);max-height:88vh;overflow:auto;background:#171e29f7;border-radius:18px;padding:20px}
+.panel h1{text-align:center;margin:0 0 16px}.row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;background:#1d2635;padding:13px 15px;border-radius:12px;margin:9px 0}.name{font-size:22px}.odds{font-size:14px;margin-top:5px}.price{color:#ffdf58;font-size:21px}.buy{background:#2db953;color:#fff;padding:9px 22px}.buy:disabled{background:#59616d}.close{display:block;margin:15px auto 0;background:#d03434;color:#fff;padding:9px 28px}
+#menu{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:linear-gradient(#397f9b22,#031b2db8)}
+.menuCard,.coop{width:min(420px,90vw);background:#0c131eea;border-radius:20px;padding:25px;text-align:center}.menuCard h1{font-size:50px;margin:0 0 8px}.menuCard p{color:#c8d7e1}.mb{width:100%;padding:13px;margin:5px 0;background:#2db953;color:#fff;font-size:19px}.mb.alt{background:#344454}
+.coop input{width:100%;padding:13px;border:0;border-radius:9px;margin:6px 0;font-size:18px}.code{font-size:32px;letter-spacing:5px;background:#0b111a;padding:12px;border-radius:9px;margin:8px 0}
+#mini{display:none;position:fixed;inset:0;z-index:35;pointer-events:auto}
+.miniMsg{position:absolute;top:27%;left:50%;transform:translate(-50%,-50%);background:#070d15d9;padding:13px 20px;border-radius:11px;font-size:27px;font-weight:900;white-space:nowrap}
+.miniScene{position:absolute;left:50%;top:54%;width:min(100%,720px);height:360px;transform:translate(-50%,-50%)}
+.pole{position:absolute;left:50%;top:0;width:31px;height:360px;transform:translateX(-50%);background:linear-gradient(90deg,#c85b02,#ff9418,#bd5000)}
+.target{position:absolute;left:calc(50% - 43px);width:86px;height:70px;border:4px solid #55ff6a;border-radius:50%;background:#55ff6a22}
+.dot{position:absolute;left:calc(50% - 12px);width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px #000;transform:translateY(-50%)}
+.miniHint{position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);background:#080e16cc;padding:8px;border-radius:8px;font-size:13px;font-weight:800;white-space:nowrap}
+@media(max-width:600px){.row{grid-template-columns:1fr auto}.price{grid-column:2}.buy{grid-column:2}.odds{grid-column:1}.miniMsg{font-size:20px}.miniScene,.pole{height:300px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud" hidden>
+<div class="money" id="money">💰 250</div>
+<button class="btn" id="settingsBtn">⚙ Settings</button>
+<button class="btn" id="coopHud" style="left:15px;bottom:15px">🤝 Co-op</button>
+<button class="btn" id="rodBtn">🪝 Rods</button>
+<div id="joystick"><div id="stick"></div></div><div id="hint">Tap a raised fishing spot to cast</div>
+</div>
+<div id="message"></div><div id="toast"></div>
+
+<div class="shade" id="rodPanel"><div class="panel"><h1>Rod Shop</h1><div id="rodList"></div><button class="close" id="closeRods">Close</button></div></div>
+<div class="shade" id="settingsPanel"><div class="panel"><h1>Settings</h1>
+<label style="display:block;background:#1d2635;padding:15px;border-radius:10px;font-weight:900">Day / Night
+<select id="timeMode" style="float:right;padding:7px"><option value="day">Day</option><option value="night">Night</option></select></label>
+<label style="display:block;margin-top:12px;background:#1d2635;padding:15px;border-radius:10px;font-weight:900">Player color
+<input id="playerColor" type="color" value="#ff4f72" style="float:right;width:52px;height:30px"></label>
+<button class="close" id="closeSettings">Close</button></div></div>
+
+<div class="shade" id="coopPanel"><div class="coop"><h2>Co-op</h2>
+<button class="mb" id="publicRoom">Public Server</button><button class="mb alt" id="privateRoom">Create Private Room</button>
+<input id="roomInput" placeholder="Room code"><button class="mb" id="joinRoom">Join with Code</button>
+<div id="roomStatus"></div><div id="roomCode" class="code" hidden></div><div id="players"></div>
+<button class="close" id="closeCoop">Close</button></div></div>
+
+<div id="mini"><div class="miniMsg" id="miniMsg">Balık bekleniyor...</div><div class="miniScene">
+<div class="pole"></div><div class="target" id="target"></div><div class="dot" id="dot"></div>
+<div class="miniHint">Tap when the marker is inside the green target</div></div></div>
+
+<div id="menu"><div class="menuCard"><h1>🎣 Fishing</h1><p>Fish on the island and improve your rod.</p>
+<button class="mb" id="play">Play</button><button class="mb alt" id="coopMenu">Co-op</button><button class="mb alt" id="settingsMenu">Settings</button></div></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore,doc,setDoc,collection,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const cfg={apiKey:"AIzaSyCNiUkBWL3Swn0e3PyoWBxjvhM8_wPHRXs",authDomain:"ttoo124.firebaseapp.com",projectId:"ttoo124",storageBucket:"ttoo124.firebasestorage.app",messagingSenderId:"973946201796",appId:"1:973946201796:web:e3574c4d100be99bbbcb91",measurementId:"G-5MT78F9R1D"};
+const $=id=>document.getElementById(id);
+const moneyEl=$("money"),toastEl=$("toast"),message=$("message"),hud=$("hud"),menu=$("menu");
+const rodBtn=$("rodBtn"),rodPanel=$("rodPanel"),rodList=$("rodList"),closeRods=$("closeRods");
+const settingsBtn=$("settingsBtn"),settingsPanel=$("settingsPanel"),settingsMenu=$("settingsMenu"),closeSettings=$("closeSettings");
+const timeMode=$("timeMode"),playerColor=$("playerColor"),play=$("play");
+const joystick=$("joystick"),stick=$("stick");
+const mini=$("mini"),miniMsg=$("miniMsg"),target=$("target"),dot=$("dot");
+const coopPanel=$("coopPanel"),coopMenu=$("coopMenu"),coopHud=$("coopHud"),closeCoop=$("closeCoop");
+const publicRoom=$("publicRoom"),privateRoom=$("privateRoom"),roomInput=$("roomInput"),joinRoomBtn=$("joinRoom");
+const roomStatus=$("roomStatus"),roomCode=$("roomCode"),players=$("players");
+
+let db=null,uid="local-"+Math.random().toString(36).slice(2,9),roomUnsub=null;
+try{const app=initializeApp(cfg),auth=getAuth(app);db=getFirestore(app);uid=(await signInAnonymously(auth)).user.uid}catch(e){console.warn(e)}
+
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9ed1e3);scene.fog=new THREE.Fog(0x9ed1e3,55,150);
+const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,300);camera.position.set(17,16,18);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;game.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.enablePan=false;controls.minDistance=9;controls.maxDistance=34;controls.minPolarAngle=.28;controls.maxPolarAngle=1.35;
+const hemi=new THREE.HemisphereLight(0xd9f5ff,0x36593c,2.2);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffffff,2.3);sun.position.set(-30,40,15);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+
+const water=new THREE.Mesh(new THREE.PlaneGeometry(280,280),new THREE.MeshStandardMaterial({color:0x198abd,roughness:.2}));water.rotation.x=-Math.PI/2;water.position.y=-1.7;scene.add(water);
+const island=new THREE.Group();scene.add(island);
+const grass=new THREE.MeshStandardMaterial({color:0x79a84a,roughness:1}),rock=new THREE.MeshStandardMaterial({color:0x69726c,roughness:1}),stone=new THREE.MeshStandardMaterial({color:0xd9dbdd,roughness:1});
+const base=new THREE.Mesh(new THREE.CylinderGeometry(10,9,2.8,18),rock);base.position.y=-.2;base.scale.z=.78;base.castShadow=true;base.receiveShadow=true;island.add(base);
+const top=new THREE.Mesh(new THREE.CylinderGeometry(9.6,8.5,.8,18),grass);top.position.y=1.25;top.scale.z=.78;top.receiveShadow=true;island.add(top);
+const path=new THREE.Mesh(new THREE.PlaneGeometry(4,10.5),stone);path.rotation.x=-Math.PI/2;path.rotation.z=-.23;path.position.set(-1.15,1.67,.2);island.add(path);
+const cross=new THREE.Mesh(new THREE.PlaneGeometry(5.5,2.4),stone);cross.rotation.x=-Math.PI/2;cross.position.set(2,-0+1.68,-4.1);island.add(cross);
+
+const gm=new THREE.MeshStandardMaterial({color:0x9bc457,roughness:1});
+for(let i=0;i<150;i++){let a=Math.random()*6.28,r=2+Math.random()*7.2,x=Math.cos(a)*r,z=Math.sin(a)*r*.76;if(Math.abs(x+1.15)<2&&Math.abs(z)<5)continue;let h=.35+Math.random()*.55,g=new THREE.Mesh(new THREE.ConeGeometry(.035,.55+h,4),gm);g.position.set(x,1.7+h/2,z);g.rotation.y=Math.random()*6.28;g.castShadow=true;island.add(g)}
+function lamp(x,z,lean=0){let g=new THREE.Group(),dark=new THREE.MeshStandardMaterial({color:0x17202a}),p=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,2.9,8),dark);p.position.y=3.1;p.rotation.z=lean;g.add(p);let cap=new THREE.Mesh(new THREE.BoxGeometry(.52,.18,.42),dark);cap.position.y=4.55;g.add(cap);let glow=new THREE.Mesh(new THREE.BoxGeometry(.29,.42,.25),new THREE.MeshStandardMaterial({color:0xffffe5,emissive:0xffedaa,emissiveIntensity:.7}));glow.position.y=4.34;g.add(glow);g.position.set(x,0,z);island.add(g)}
+[[-7,-4],[-5,.5],[-3.5,4.4],[.2,3.5],[5,.5],[6,-4.2],[2,-6],[-7,3.4]].forEach((p,i)=>lamp(...p,i%3===0?-.08:i%3===1?.05:0));
+const dock=new THREE.Group(),wood=new THREE.MeshStandardMaterial({color:0x704a3e}),dark=new THREE.MeshStandardMaterial({color:0x3d302c});
+for(let i=0;i<10;i++){let q=new THREE.Mesh(new THREE.BoxGeometry(2.25,.28,1.05),wood);q.position.set(2+i*.92,1.55,-8.6);q.castShadow=true;dock.add(q)}
+for(let i=0;i<5;i++){let q=new THREE.Mesh(new THREE.BoxGeometry(.18,3.4,.18),dark);q.position.set(1.1+i*2.1,-.15,-8.6);dock.add(q)}
+let rail=new THREE.Mesh(new THREE.BoxGeometry(10.2,.2,.18),dark);rail.position.set(6,2.05,-9.12);dock.add(rail);scene.add(dock);
+
+const spots=[];function makeSpot(x,z,s){let r=new THREE.Mesh(new THREE.RingGeometry(.82,1.04,40),new THREE.MeshBasicMaterial({color:0xf4ffff,transparent:true,opacity:.78,side:THREE.DoubleSide}));r.rotation.x=-Math.PI/2;r.position.set(x,-1.52,z);r.scale.setScalar(s);scene.add(r);spots.push(r)}
+makeSpot(-9.4,-.8,1.1);makeSpot(-7.1,6.2,.95);makeSpot(7.5,5.7,1.15);makeSpot(10.2,-1.2,1.1);makeSpot(6,-8.2,.95);
+
+const playerGroup=new THREE.Group();scene.add(playerGroup);const playerMat=new THREE.MeshStandardMaterial({color:0xff4f72});const player=new THREE.Mesh(new THREE.SphereGeometry(.56,24,16),playerMat);player.position.y=2.35;player.castShadow=true;playerGroup.add(player);playerGroup.position.set(0,0,2.2);
+
+const rods=[["Better Rod",100000,[65,25,10],"#5f92ff"],["Electric Rod",500000,[55,30,15],"#f5d72b"],["Grass Rod",1000000,[50,30,20],"#45c64f"],["Astral Rod",1000000000,[30,35,45],"#ad62ff"]];
+let money=250,currentRod=0,playing=false,fishing=false;
+const fish=[["Shrimp","Normal"],["Anchovy","Normal"],["Atlantic Silverside","Normal"],["Bass","Normal"],["Blue Crab","Normal"],["Blue Mackerel","Normal"],["Mullet","Normal"],["Salmon","Normal"],["Sardine","Normal"],["Sea Bream","Normal"],["Sole","Normal"],["Starfish","Normal"],["Tune","Normal"],["Whiting","Normal"],["Cod","Normal"],["Krill","Normal"],["Lobster","Rare"],["Moon Jellyfish","Rare"],["Parrotfish","Rare"],["Purple Octopus","Rare"],["Caretta Caretta","Rare"],["Cauliflower Jellyfish","Rare"],["Clownfish","Rare"],["Eel","Rare"],["Lionfish","Rare"],["Mola Mola","Rare"],["Seahorse","Rare"],["Stingray","Rare"],["Dragon Moray Eel","Legendary"],["Kraken","Legendary"],["Great Whale","Legendary"],["Nautilus","Legendary"],["Whale Shark","Legendary"],["İsonade","Legendary"]];
+const val={Normal:250,Rare:1250,Legendary:6250};
+const fmt=n=>n.toLocaleString("en-US");moneyEl.textContent="💰 "+fmt(money);
+function toast(t){toastEl.textContent=t;toastEl.style.opacity=1;clearTimeout(toastEl.t);toastEl.t=setTimeout(()=>toastEl.style.opacity=0,1900)}
+function msg(t){message.textContent=t;message.style.opacity=1;clearTimeout(msg.t);msg.t=setTimeout(()=>message.style.opacity=0,1700)}
+function renderRods(){rodList.innerHTML="";rods.forEach((r,i)=>{let d=document.createElement("div");d.className="row";d.innerHTML=`<div><div class="name" style="color:${r[3]}">${r[0]}</div><div class="odds"><span style="color:#55c85b">Normal: ${r[2][0]}%</span> <span style="color:#ffd43b">Rare: ${r[2][1]}%</span> <span style="color:#e84b4b">Legendary: ${r[2][2]}%</span></div></div><div class="price">${fmt(r[1])}</div><button class="buy">${currentRod===i+1?"Equipped":"Buy"}</button>`;let b=d.querySelector("button");b.disabled=currentRod===i+1;b.onclick=()=>{if(money>=r[1]){money-=r[1];currentRod=i+1;moneyEl.textContent="💰 "+fmt(money);renderRods();toast(r[0]+" equipped!")}else toast("Not enough money.")};rodList.appendChild(d)})}
+renderRods();
+
+function openPanel(x){document.getElementById(x).style.display="flex"}function closePanel(x){document.getElementById(x).style.display="none"}
+rodBtn.onclick=()=>{renderRods();openPanel("rodPanel")};closeRods.onclick=()=>closePanel("rodPanel");settingsBtn.onclick=()=>openPanel("settingsPanel");settingsMenu.onclick=()=>openPanel("settingsPanel");closeSettings.onclick=()=>closePanel("settingsPanel");
+document.querySelectorAll(".shade").forEach(e=>e.addEventListener("pointerdown",x=>{if(x.target===e)e.target.style.display="none"}));
+timeMode.onchange=e=>{let n=e.target.value==="night";scene.background.set(n?0x09182b:0x9ed1e3);scene.fog.color.set(n?0x09182b:0x9ed1e3);sun.intensity=n?.45:2.3;hemi.intensity=n?.55:2.2};playerColor.oninput=e=>playerMat.color.set(e.target.value);
+function start(){playing=true;menu.style.display="none";hud.hidden=false;controls.enabled=true}
+play.onclick=start;
+
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+renderer.domElement.addEventListener("pointerdown",e=>{if(!playing||fishing||e.target!==renderer.domElement)return;let r=renderer.domElement.getBoundingClientRect();pointer.x=(e.clientX-r.left)/r.width*2-1;pointer.y=-(e.clientY-r.top)/r.height*2+1;ray.setFromCamera(pointer,camera);if(ray.intersectObjects(spots).length)beginFishing();else msg("Please tap a raised fishing spot to cast.")});
+let miniY=40,dir=1,last=performance.now(),difficulty="Easy",waitTimer;
+function beginFishing(){fishing=true;controls.enabled=false;difficulty=Math.random()<.70?"Easy":Math.random()<.90?"Medium":"Hard";mini.style.display="block";miniMsg.textContent="Balık bekleniyor...";clearTimeout(waitTimer);waitTimer=setTimeout(()=>{if(fishing)miniMsg.textContent="Balık yaklaşıyor!"},900)}
+function finish(ok){fishing=false;mini.style.display="none";controls.enabled=true;if(!ok){toast("The fish got away!");return}let o=currentRod===0?[70,27,3]:rods[currentRod-1][2],r=Math.random()*100,rar=r<o[0]?"Normal":r<o[0]+o[1]?"Rare":"Legendary",a=fish.filter(x=>x[1]===rar),f=a[Math.floor(Math.random()*a.length)],v=val[rar];money+=v;moneyEl.textContent="💰 "+fmt(money);toast(f[0]+" caught! +"+fmt(v)+" money")}
+mini.addEventListener("pointerdown",()=>{if(!fishing)return;let a=target.getBoundingClientRect(),b=dot.getBoundingClientRect(),cy=b.top+b.height/2;finish(cy>=a.top&&cy<=a.bottom)});
+
+const keys={};addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+let jx=0,jz=0,active=false;function joyMove(e){let r=joystick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),z=e.clientY-(r.top+r.height/2),d=Math.hypot(x,z),m=45;if(d>m){x=x/d*m;z=z/d*m}jx=x/m;jz=z/m;stick.style.transform=`translate(${x}px,${z}px)`}
+joystick.addEventListener("pointerdown",e=>{active=true;joystick.setPointerCapture(e.pointerId);joyMove(e)});joystick.addEventListener("pointermove",e=>active&&joyMove(e));joystick.addEventListener("pointerup",()=>{active=false;jx=jz=0;stick.style.transform="translate(0,0)"});
+
+async function joinRoomCode(code){
+ if(!db){roomStatus.textContent="Firebase connection unavailable.";return}
+ code=code.trim().toUpperCase();if(!code)return;
+ roomCode.textContent=code;roomCode.hidden=false;roomStatus.textContent="Connecting...";
+ try{
+  await setDoc(doc(db,"fishingRooms",code,"players",uid),{uid,x:playerGroup.position.x,z:playerGroup.position.z,color:playerMat.color.getHexString(),updatedAt:serverTimestamp()},{merge:true});
+  if(roomUnsub)roomUnsub();roomUnsub=onSnapshot(collection(db,"fishingRooms",code,"players"),snap=>{
+   players.textContent=snap.size+" player"+(snap.size===1?"":"s")+" in room";
+   snap.docChanges().forEach(ch=>{if(ch.doc.id===uid)return;let d=ch.doc.data(),o=scene.getObjectByName("other_"+ch.doc.id);if(!o){o=new THREE.Mesh(new THREE.SphereGeometry(.56,20,14),new THREE.MeshStandardMaterial({color:"#"+(d.color||"4f9cff")}));o.name="other_"+ch.doc.id;o.position.y=2.35;scene.add(o)}o.position.x=d.x||0;o.position.z=d.z||0});
+  });
+  roomStatus.textContent="Connected — share the code.";start();
+ }catch(e){console.error(e);roomStatus.textContent="Room connection was rejected by Firebase rules."}
+}
+publicRoom.onclick=()=>joinRoomCode("PUBLIC-"+location.hostname.replace(/[^a-z0-9]/gi,"").slice(0,7).toUpperCase());privateRoom.onclick=()=>joinRoomCode(Math.random().toString(36).slice(2,8));joinRoomBtn.onclick=()=>joinRoomCode(roomInput.value);
+coopMenu.onclick=()=>openPanel("coopPanel");coopHud.onclick=()=>openPanel("coopPanel");closeCoop.onclick=()=>closePanel("coopPanel");
+
+function animate(t){requestAnimationFrame(animate);let dt=Math.min(.04,(t-last)/1000);last=t;
+if(playing&&!fishing){let x=jx,z=jz;if(keys.w)z--;if(keys.s)z++;if(keys.a)x--;if(keys.d)x++;let l=Math.hypot(x,z)||1;if(Math.abs(x)+Math.abs(z)>.05){playerGroup.position.x=THREE.MathUtils.clamp(playerGroup.position.x+x/l*3.2*dt,-7.1,7.1);playerGroup.position.z=THREE.MathUtils.clamp(playerGroup.position.z+z/l*3.2*dt,-6.7,6.7)}}
+if(fishing){let speed=difficulty==="Easy"?70:difficulty==="Medium"?120:175;miniY+=dir*speed*dt;if(miniY>270){miniY=270;dir=-1}if(miniY<35){miniY=35;dir=1}dot.style.top=miniY+"px"}
+controls.target.lerp(new THREE.Vector3(playerGroup.position.x,1.5,playerGroup.position.z),.08);controls.update();renderer.render(scene,camera)}
+requestAnimationFrame(animate);addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
