@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Fishing</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#82c9e6;font-family:Arial,sans-serif;color:#fff;touch-action:none}
+#game,canvas{position:fixed;inset:0;width:100%;height:100%}
+button{font:inherit;font-weight:900;border:0;border-radius:10px;cursor:pointer}
+#hud{position:fixed;inset:0;pointer-events:none}.btn{position:absolute;pointer-events:auto;padding:10px 14px;background:#0b1420d9;color:white}
+#settingsBtn{top:15px;left:15px}.money{position:absolute;top:15px;right:15px;background:#0b1420d9;padding:10px 15px;border-radius:10px;font-weight:900}
+#rodBtn{right:15px;bottom:15px}
+#joystick{position:absolute;left:18px;bottom:72px;width:126px;height:126px;border-radius:50%;background:#0b14204d;border:2px solid #ffffff38;pointer-events:auto}
+#stick{position:absolute;left:37px;top:37px;width:52px;height:52px;border-radius:50%;background:#fffC}
+#hotbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:#0b1420d9;border:2px solid #ffffff33;border-radius:12px;pointer-events:auto;max-width:72vw;overflow-x:auto}
+.slot{position:relative;width:58px;height:58px;min-width:58px;border:2px solid #ffffff35;border-radius:9px;background:#172434;color:#fff;display:flex;align-items:center;justify-content:center;font-size:25px;cursor:pointer}.slot.selected{border-color:#fff;box-shadow:0 0 0 2px #4fd7ff88}.slot .count{position:absolute;right:4px;bottom:2px;font-size:12px;background:#0009;border-radius:5px;padding:1px 4px}.slot .key{position:absolute;left:4px;top:2px;font-size:10px;color:#b9c7d1}.slot.empty{opacity:.42}
+#hint{display:none}
+#message,#toast{position:fixed;left:50%;transform:translateX(-50%);background:#080e16dc;border-radius:11px;padding:12px 20px;font-weight:900;z-index:30;opacity:0;transition:.15s;pointer-events:none}
+#message{top:13%;font-size:21px;white-space:nowrap}#toast{bottom:13%}
+.shade{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
+.panel{width:min(890px,94vw);max-height:88vh;overflow:auto;background:#171e29f7;border-radius:18px;padding:20px}
+.panel h1{text-align:center;margin:0 0 16px}.row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;background:#1d2635;padding:13px 15px;border-radius:12px;margin:9px 0}.name{font-size:22px}.odds{font-size:14px;margin-top:5px}.price{color:#ffdf58;font-size:21px}.buy{background:#2db953;color:#fff;padding:9px 22px}.buy:disabled{background:#59616d}.close{display:block;margin:15px auto 0;background:#d03434;color:#fff;padding:9px 28px}
+#menu{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:linear-gradient(#397f9b22,#031b2db8)}
+.menuCard,.coop{width:min(420px,90vw);background:#0c131eea;border-radius:20px;padding:25px;text-align:center}.menuCard h1{font-size:50px;margin:0 0 8px}.menuCard p{color:#c8d7e1}.mb{width:100%;padding:13px;margin:5px 0;background:#2db953;color:#fff;font-size:19px}.mb.alt{background:#344454}
+.coop input{width:100%;padding:13px;border:0;border-radius:9px;margin:6px 0;font-size:18px}.code{font-size:32px;letter-spacing:5px;background:#0b111a;padding:12px;border-radius:9px;margin:8px 0}
+#mini{display:none;position:fixed;inset:0;z-index:35;pointer-events:auto}
+.miniMsg{position:absolute;top:27%;left:50%;transform:translate(-50%,-50%);background:#070d15d9;padding:13px 20px;border-radius:11px;font-size:27px;font-weight:900;white-space:nowrap}
+.miniScene{position:absolute;left:50%;top:54%;width:min(100%,720px);height:360px;transform:translate(-50%,-50%)}
+.pole{position:absolute;left:50%;top:0;width:31px;height:360px;transform:translateX(-50%);background:linear-gradient(90deg,#c85b02,#ff9418,#bd5000)}
+.target{position:absolute;left:calc(50% - 43px);width:86px;height:70px;border:4px solid #55ff6a;border-radius:50%;background:#55ff6a22}
+.dot{position:absolute;left:calc(50% - 12px);width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px #000;transform:translateY(-50%)}
+.miniHint{position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);background:#080e16cc;padding:8px;border-radius:8px;font-size:13px;font-weight:800;white-space:nowrap}.miniTap{position:absolute;bottom:-78px;left:50%;transform:translateX(-50%);background:#2db953;color:#fff;padding:10px 22px;border-radius:10px;font-weight:900}
+@media(max-width:600px){.row{grid-template-columns:1fr auto}.price{grid-column:2}.buy{grid-column:2}.odds{grid-column:1}.miniMsg{font-size:20px}.miniScene,.pole{height:300px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud" hidden>
+<div class="money" id="money">💰 0</div>
+<button class="btn" id="rodBtn">🪝 Rod Shop</button>
+<div id="joystick"><div id="stick"></div></div>
+<div id="hotbar" aria-label="Inventory hotbar"></div>
+</div>
+<div id="message"></div><div id="toast"></div>
+
+<div class="shade" id="rodPanel"><div class="panel"><h1>Rod Shop</h1><div id="rodList"></div><button class="close" id="closeRods">Close</button></div></div>
+<div class="shade" id="settingsPanel"><div class="panel"><h1>Settings</h1>
+<label style="display:block;background:#1d2635;padding:15px;border-radius:10px;font-weight:900">Day / Night
+<select id="timeMode" style="float:right;padding:7px"><option value="day">Day</option><option value="night">Night</option></select></label>
+<label style="display:block;margin-top:12px;background:#1d2635;padding:15px;border-radius:10px;font-weight:900">Player color
+<input id="playerColor" type="color" value="#ff4f72" style="float:right;width:52px;height:30px"></label>
+<button class="close" id="closeSettings">Close</button></div></div>
+
+<div class="shade" id="coopPanel"><div class="coop"><h2>Co-op</h2>
+<button class="mb" id="publicRoom">Public Server</button><button class="mb alt" id="privateRoom">Create Private Room</button>
+<input id="roomInput" placeholder="Room code"><button class="mb" id="joinRoom">Join with Code</button>
+<div id="roomStatus"></div><div id="roomCode" class="code" hidden></div><div id="players"></div>
+<button class="close" id="closeCoop">Close</button></div></div>
+
+<div class="shade" id="sellPanel"><div class="panel" style="max-width:420px;text-align:center"><h1>Sell fish?</h1><p id="sellText">Sell all fish in your inventory?</p><div style="display:flex;gap:10px;justify-content:center"><button class="mb" id="confirmSell" style="background:#2db953">Sell All</button><button class="mb alt" id="cancelSell">Cancel</button></div></div></div>
+
+<div id="mini"><div class="miniMsg" id="miniMsg">Balık bekleniyor...</div><div class="miniScene">
+<div class="pole"></div><div class="target" id="target"></div><div class="dot" id="dot"></div>
+<div class="miniHint">Tap the green target when the marker is inside it</div><button class="miniTap" id="miniTap">Catch</button></div></div>
+
+<div id="menu"><div class="menuCard"><h1>🎣 Fishing</h1><p>Fish on the island and improve your rod.</p>
+<button class="mb" id="play">Play</button><button class="mb alt" id="coopMenu">Co-op</button><button class="mb alt" id="settingsMenu">Settings</button></div></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {getFirestore,doc,setDoc,collection,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const cfg={apiKey:"AIzaSyCNiUkBWL3Swn0e3PyoWBxjvhM8_wPHRXs",authDomain:"ttoo124.firebaseapp.com",projectId:"ttoo124",storageBucket:"ttoo124.firebasestorage.app",messagingSenderId:"973946201796",appId:"1:973946201796:web:e3574c4d100be99bbbcb91",measurementId:"G-5MT78F9R1D"};
+const $=id=>document.getElementById(id);
+const moneyEl=$("money"),toastEl=$("toast"),message=$("message"),hud=$("hud"),menu=$("menu");
+const rodBtn=$("rodBtn"),rodPanel=$("rodPanel"),rodList=$("rodList"),closeRods=$("closeRods");
+const settingsPanel=$("settingsPanel"),settingsMenu=$("settingsMenu"),closeSettings=$("closeSettings");
+const timeMode=$("timeMode"),playerColor=$("playerColor"),play=$("play");
+const joystick=$("joystick"),stick=$("stick");
+const mini=$("mini"),miniMsg=$("miniMsg"),target=$("target"),dot=$("dot");
+const coopPanel=$("coopPanel"),coopMenu=$("coopMenu"),coopHud=$("coopHud"),closeCoop=$("closeCoop");
+const publicRoom=$("publicRoom"),privateRoom=$("privateRoom"),roomInput=$("roomInput"),joinRoomBtn=$("joinRoom");
+const roomStatus=$("roomStatus"),roomCode=$("roomCode"),players=$("players");
+
+let db=null,uid="local-"+Math.random().toString(36).slice(2,9),roomUnsub=null;
+try{const app=initializeApp(cfg),auth=getAuth(app);db=getFirestore(app);uid=(await signInAnonymously(auth)).user.uid}catch(e){console.warn(e)}
+
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9ed1e3);scene.fog=new THREE.Fog(0x9ed1e3,55,150);
+const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,300);camera.position.set(17,16,18);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;game.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.enablePan=false;controls.minDistance=9;controls.maxDistance=34;controls.minPolarAngle=.28;controls.maxPolarAngle=1.35;
+const hemi=new THREE.HemisphereLight(0xd9f5ff,0x36593c,2.2);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffffff,2.3);sun.position.set(-30,40,15);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+
+const water=new THREE.Mesh(new THREE.PlaneGeometry(280,280),new THREE.MeshStandardMaterial({color:0x198abd,roughness:.2}));water.rotation.x=-Math.PI/2;water.position.y=-1.7;scene.add(water);
+const island=new THREE.Group();scene.add(island);
+const grass=new THREE.MeshStandardMaterial({color:0x79a84a,roughness:1}),rock=new THREE.MeshStandardMaterial({color:0x69726c,roughness:1}),stone=new THREE.MeshStandardMaterial({color:0xd9dbdd,roughness:1});
+const base=new THREE.Mesh(new THREE.CylinderGeometry(10,9,2.8,18),rock);base.position.y=-.2;base.scale.z=.78;base.castShadow=true;base.receiveShadow=true;island.add(base);
+const top=new THREE.Mesh(new THREE.CylinderGeometry(9.6,8.5,.8,18),grass);top.position.y=1.25;top.scale.z=.78;top.receiveShadow=true;island.add(top);
+const path=new THREE.Mesh(new THREE.PlaneGeometry(4,10.5),stone);path.rotation.x=-Math.PI/2;path.rotation.z=-.23;path.position.set(-1.15,1.67,.2);island.add(path);
+const cross=new THREE.Mesh(new THREE.PlaneGeometry(5.5,2.4),stone);cross.rotation.x=-Math.PI/2;cross.position.set(2,-0+1.68,-4.1);island.add(cross);
+
+const gm=new THREE.MeshStandardMaterial({color:0x9bc457,roughness:1});
+for(let i=0;i<150;i++){let a=Math.random()*6.28,r=2+Math.random()*7.2,x=Math.cos(a)*r,z=Math.sin(a)*r*.76;if(Math.abs(x+1.15)<2&&Math.abs(z)<5)continue;let h=.35+Math.random()*.55,g=new THREE.Mesh(new THREE.ConeGeometry(.035,.55+h,4),gm);g.position.set(x,1.7+h/2,z);g.rotation.y=Math.random()*6.28;g.castShadow=true;island.add(g)}
+const dock=new THREE.Group(),wood=new THREE.MeshStandardMaterial({color:0x704a3e,roughness:.82}),dark=new THREE.MeshStandardMaterial({color:0x202833,roughness:.9});
+// Complete rear-right harbor: one broad dock plus a short side walkway and supports.
+const dockMain=new THREE.Mesh(new THREE.BoxGeometry(7.8,.34,3.6),wood);dockMain.position.set(5.0,1.5,6.7);dockMain.castShadow=true;dock.add(dockMain);
+for(let i=0;i<4;i++){for(let j=0;j<2;j++){let q=new THREE.Mesh(new THREE.BoxGeometry(.22,3.2,.22),dark);q.position.set(2.1+i*1.95,0.0,5.35+j*2.7);q.castShadow=true;dock.add(q)}}
+const sidePier=new THREE.Mesh(new THREE.BoxGeometry(2.2,.34,5.2),wood);sidePier.position.set(1.1,1.5,5.7);sidePier.castShadow=true;dock.add(sidePier);
+for(let x of [1.1,2.0,5.0,8.0]){let q=new THREE.Mesh(new THREE.BoxGeometry(.18,.95,.18),dark);q.position.set(x,2.08,5.0);dock.add(q);let r=new THREE.Mesh(new THREE.BoxGeometry(.18,.95,.18),dark);r.position.set(x,2.08,8.45);dock.add(r)}
+let railFront=new THREE.Mesh(new THREE.BoxGeometry(6.9,.16,.16),dark);railFront.position.set(5.0,2.45,5.0);dock.add(railFront);
+let railBack=new THREE.Mesh(new THREE.BoxGeometry(6.9,.16,.16),dark);railBack.position.set(5.0,2.45,8.45);dock.add(railBack);
+scene.add(dock);
+const crate=new THREE.Group();
+const crateBody=new THREE.Mesh(new THREE.BoxGeometry(1.45,1.05,1.15),new THREE.MeshStandardMaterial({color:0x9b6335,roughness:.9}));crateBody.castShadow=true;crate.add(crateBody);
+for(let y of [.0,.48]){let band=new THREE.Mesh(new THREE.BoxGeometry(1.5,.12,1.2),new THREE.MeshStandardMaterial({color:0x4c3426,roughness:.9}));band.position.y=y;crate.add(band)}
+const sellSign=new THREE.Mesh(new THREE.BoxGeometry(1.7,.55,.08),new THREE.MeshStandardMaterial({color:0xf2d46b,roughness:.7}));sellSign.position.set(0,.92,.6);crate.add(sellSign);
+crate.position.set(7.1,2.15,7.0);scene.add(crate);
+
+const spots=[];function makeSpot(x,z,rot){let g=new THREE.Group();g.name="fishingSpot";const pad=new THREE.Mesh(new THREE.CylinderGeometry(1.35,1.5,.18,32),new THREE.MeshStandardMaterial({color:0x198abd,roughness:.2,metalness:.05}));pad.position.y=0;pad.rotation.y=rot;pad.castShadow=false;g.add(pad);const edge=new THREE.Mesh(new THREE.RingGeometry(1.12,1.35,32),new THREE.MeshBasicMaterial({color:0xbdefff,transparent:true,opacity:.8,side:THREE.DoubleSide}));edge.rotation.x=-Math.PI/2;edge.position.y=.11;g.add(edge);g.position.set(x,-1.61,z);scene.add(g);spots.push(g)}
+makeSpot(-8.0,1.2,-.3);makeSpot(7.3,1.6,.25);
+
+const playerGroup=new THREE.Group();scene.add(playerGroup);const playerMat=new THREE.MeshStandardMaterial({color:0xff4f72});const player=new THREE.Mesh(new THREE.SphereGeometry(.56,24,16),playerMat);player.position.y=2.35;player.castShadow=true;playerGroup.add(player);playerGroup.position.set(0,0,2.2);
+const heldGroup=new THREE.Group();playerGroup.add(heldGroup);heldGroup.position.set(.42,1.45,.12);
+const heldRod=new THREE.Group();const rodShaft=new THREE.Mesh(new THREE.CylinderGeometry(.045,.065,3.2,8),new THREE.MeshStandardMaterial({color:0xb9682e}));rodShaft.rotation.z=-.18;rodShaft.position.y=1.1;heldRod.add(rodShaft);const reel=new THREE.Mesh(new THREE.TorusGeometry(.18,.045,8,16),new THREE.MeshStandardMaterial({color:0x20262d}));reel.position.set(.05,.05,.12);reel.rotation.x=Math.PI/2;heldRod.add(reel);heldGroup.add(heldRod);
+const heldFish=new THREE.Mesh(new THREE.SphereGeometry(.22,14,10),new THREE.MeshStandardMaterial({color:0x66b6e8}));heldFish.scale.set(1.25,.55,.6);heldFish.position.set(0,1.05,.05);heldFish.visible=false;heldGroup.add(heldFish);
+const castLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,-1,0)]),new THREE.LineBasicMaterial({color:0xf4f4f4}));castLine.visible=false;scene.add(castLine);
+
+const rods=[["Better Rod",100000,[65,25,10],"#5f92ff"],["Electric Rod",500000,[55,30,15],"#f5d72b"],["Grass Rod",1000000,[50,30,20],"#45c64f"],["Astral Rod",1000000000,[30,35,45],"#ad62ff"]];
+let money=0,currentRod=0,playing=false,fishing=false;
+let heldItem="rod";
+let inventory={};
+let stateLoaded=false, cloudReady=false, cloudLoadDone=false, fishingReq=0, fishingWait=new Map();
+const colors=["#ff4f72","#4f9cff","#55d66b","#ffd447","#b36cff","#ff8c42"];
+function stateObject(){return {money,currentRod,heldItem,inventory,color:playerMat.color.getHexString(),display:timeMode.value};}
+function localSave(){if(window.parent!==window)return;try{localStorage.setItem("hublandFishing3D_guest",JSON.stringify(stateObject()))}catch(_){}}
+function applyState(st){if(!st||typeof st!=="object")return;money=Number.isFinite(st.money)?st.money:0;currentRod=Number.isInteger(st.currentRod)?Math.max(0,Math.min(4,st.currentRod)):0;heldItem=typeof st.heldItem==="string"?st.heldItem:"rod";inventory=st.inventory&&typeof st.inventory==="object"?st.inventory:{};if(st.color)playerMat.color.set("#"+String(st.color).replace(/^#/,""));if(st.display)timeMode.value=st.display;updateMoney();renderHotbar();updateHeldItem();}
+function updateMoney(){moneyEl.textContent="💰 "+fmt(money);}
+function saveState(){localSave();if(cloudReady)fishingRpc("SAVE",{state:stateObject()}).catch(()=>{})}
+function loadLocal(){if(window.parent!==window)return;try{const st=JSON.parse(localStorage.getItem("hublandFishing3D_guest")||"null");if(st)applyState(st)}catch(_){}}
+function fishingRpc(op,data={}){return new Promise((resolve,reject)=>{const requestId="f"+(++fishingReq)+"_"+Date.now();fishingWait.set(requestId,{resolve,reject});try{parent.postMessage({type:"FISHING_REQUEST",requestId,op,data},"*")}catch(e){fishingWait.delete(requestId);reject(e);return}setTimeout(()=>{const w=fishingWait.get(requestId);if(w){fishingWait.delete(requestId);reject(new Error("HubLand yanıt vermedi."))}},10000)})}
+window.addEventListener("message",e=>{const d=e.data||{};if(d.type==="HUBLAND_AUTH_CONTEXT"&&d.uid){cloudReady=true;if(!cloudLoadDone){cloudLoadDone=true;fishingRpc("LOAD").then(r=>{if(r&&r.state)applyState(r.state);else saveState();stateLoaded=true}).catch(()=>{stateLoaded=true})}}else if(d.type==="FISHING_RESPONSE"){const w=fishingWait.get(d.requestId);if(!w)return;fishingWait.delete(d.requestId);d.ok?w.resolve(d.data):w.reject(new Error(d.error||"Fishing cloud operation failed."))}});
+try{parent.postMessage({type:"HUBLAND_REQUEST_AUTH_CONTEXT"},"*")}catch(_){}
+const fish=[["Shrimp","Normal"],["Anchovy","Normal"],["Atlantic Silverside","Normal"],["Bass","Normal"],["Blue Crab","Normal"],["Blue Mackerel","Normal"],["Mullet","Normal"],["Salmon","Normal"],["Sardine","Normal"],["Sea Bream","Normal"],["Sole","Normal"],["Starfish","Normal"],["Tune","Normal"],["Whiting","Normal"],["Cod","Normal"],["Krill","Normal"],["Lobster","Rare"],["Moon Jellyfish","Rare"],["Parrotfish","Rare"],["Purple Octopus","Rare"],["Caretta Caretta","Rare"],["Cauliflower Jellyfish","Rare"],["Clownfish","Rare"],["Eel","Rare"],["Lionfish","Rare"],["Mola Mola","Rare"],["Seahorse","Rare"],["Stingray","Rare"],["Dragon Moray Eel","Legendary"],["Kraken","Legendary"],["Great Whale","Legendary"],["Nautilus","Legendary"],["Whale Shark","Legendary"],["İsonade","Legendary"]];
+const val={Normal:250,Rare:1250,Legendary:6250};
+const fmt=n=>n.toLocaleString("en-US");updateMoney();
+function toast(t){toastEl.textContent=t;toastEl.style.opacity=1;clearTimeout(toastEl.t);toastEl.t=setTimeout(()=>toastEl.style.opacity=0,1900)}
+function msg(t){message.textContent=t;message.style.opacity=1;clearTimeout(msg.t);msg.t=setTimeout(()=>message.style.opacity=0,1700)}
+function renderRods(){rodList.innerHTML="";rods.forEach((r,i)=>{let d=document.createElement("div");d.className="row";d.innerHTML=`<div><div class="name" style="color:${r[3]}">${r[0]}</div><div class="odds"><span style="color:#55c85b">Normal: ${r[2][0]}%</span> <span style="color:#ffd43b">Rare: ${r[2][1]}%</span> <span style="color:#e84b4b">Legendary: ${r[2][2]}%</span></div></div><div class="price">${fmt(r[1])}</div><button class="buy">${currentRod===i+1?"Equipped":"Buy"}</button>`;let b=d.querySelector("button");b.disabled=currentRod===i+1;b.onclick=()=>{if(currentRod===i+1)return;if(money>=r[1]){money-=r[1];currentRod=i+1;heldItem="rod";updateMoney();updateHeldItem();renderHotbar();renderRods();saveState();toast(r[0]+" equipped!")}else toast("Not enough money. You need "+fmt(r[1]-money)+" more money.")};rodList.appendChild(d)})}
+function itemEmoji(name){if(name==="rod")return "🪝";const map={"Shrimp":"🦐","Anchovy":"🐟","Atlantic Silverside":"🐟","Bass":"🐟","Blue Crab":"🦀","Blue Mackerel":"🐟","Mullet":"🐟","Salmon":"🐟","Sardine":"🐟","Sea Bream":"🐟","Sole":"🐟","Starfish":"⭐","Tune":"🐟","Whiting":"🐟","Cod":"🐟","Krill":"🦐","Lobster":"🦞","Moon Jellyfish":"🪼","Parrotfish":"🐠","Purple Octopus":"🐙","Caretta Caretta":"🐢","Cauliflower Jellyfish":"🪼","Clownfish":"🐠","Eel":"🐍","Lionfish":"🐠","Mola Mola":"🐟","Seahorse":"🦐","Stingray":"🦈","Dragon Moray Eel":"🐉","Kraken":"🐙","Great Whale":"🐋","Nautilus":"🐚","Whale Shark":"🦈","İsonade":"🌊"};return map[name]||"🐟"}
+function renderHotbar(){const bar=$("hotbar");if(!bar)return;bar.innerHTML="";const rod=document.createElement("button");rod.className="slot"+(heldItem==="rod"?" selected":"");rod.innerHTML='<span class="key">1</span>🪝';rod.title="Equip rod";rod.onclick=()=>{heldItem="rod";updateHeldItem();renderHotbar();saveState()};bar.appendChild(rod);let entries=Object.entries(inventory).filter(([,v])=>v&&v.count>0).slice(0,7);entries.forEach(([name,v],idx)=>{const b=document.createElement("button");b.className="slot"+(heldItem===name?" selected":"");b.innerHTML='<span class="key">'+(idx+2)+'</span>'+itemEmoji(name)+'<span class="count">'+v.count+'</span>';b.title=name;b.onclick=()=>{heldItem=name;updateHeldItem();renderHotbar();saveState()};b.oncontextmenu=e=>{e.preventDefault();dropHeldFish(name)};let holdTimer; b.addEventListener("pointerdown",()=>{holdTimer=setTimeout(()=>dropHeldFish(name),650)});b.addEventListener("pointerup",()=>clearTimeout(holdTimer));b.addEventListener("pointerleave",()=>clearTimeout(holdTimer));bar.appendChild(b)});}
+function updateHeldItem(){heldGroup.visible=heldItem==="rod"||!!inventory[heldItem];if(heldItem==="rod"){heldRod.visible=true;heldFish.visible=false}else if(inventory[heldItem]){heldRod.visible=false;heldFish.visible=true;heldFish.material.color.set(heldItem.includes("Shrimp")?0xff8c5a:0x66b6e8)}else{heldRod.visible=true;heldFish.visible=false}}
+function dropHeldFish(name){if(!inventory[name]||inventory[name].count<1)return;inventory[name].count--;if(inventory[name].count<=0)delete inventory[name];heldItem="rod";updateHeldItem();renderHotbar();saveState();toast(name+" dropped.")}
+loadLocal();renderRods();renderHotbar();
+
+function openPanel(x){document.getElementById(x).style.display="flex"}function closePanel(x){document.getElementById(x).style.display="none"}
+rodBtn.onclick=()=>{renderRods();openPanel("rodPanel")};closeRods.onclick=()=>closePanel("rodPanel");settingsMenu.onclick=()=>openPanel("settingsPanel");closeSettings.onclick=()=>closePanel("settingsPanel");
+document.querySelectorAll(".shade").forEach(e=>e.addEventListener("pointerdown",x=>{if(x.target===e)e.target.style.display="none"}));
+timeMode.onchange=e=>{let n=e.target.value==="night";scene.background.set(n?0x09182b:0x9ed1e3);scene.fog.color.set(n?0x09182b:0x9ed1e3);sun.intensity=n?.45:2.3;hemi.intensity=n?.55:2.2;saveState()};playerColor.oninput=e=>{playerMat.color.set(e.target.value);saveState()};
+function start(){playing=true;menu.style.display="none";hud.hidden=false;controls.enabled=true;updateHeldItem();renderHotbar();}
+play.onclick=start;
+
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();
+renderer.domElement.addEventListener("pointerdown",e=>{if(!playing||fishing||e.target!==renderer.domElement)return;let r=renderer.domElement.getBoundingClientRect();pointer.x=(e.clientX-r.left)/r.width*2-1;pointer.y=-(e.clientY-r.top)/r.height*2+1;ray.setFromCamera(pointer,camera);if(ray.intersectObject(crate,true).length){if(Object.values(inventory).some(v=>v&&v.count>0)){openPanel("sellPanel")}else toast("Your inventory is empty.");return}if(ray.intersectObjects(spots,true).length){if(heldItem!=="rod"){toast("Equip your rod first.");return}beginFishing();return}});
+let miniY=40,dir=1,last=performance.now(),difficulty="Easy",waitTimer;
+function beginFishing(){fishing=true;controls.enabled=false;difficulty=Math.random()<.70?"Easy":Math.random()<.90?"Medium":"Hard";mini.style.display="block";miniMsg.textContent=difficulty+" — Balık bekleniyor...";miniMsg.textContent="Balık bekleniyor...";clearTimeout(waitTimer);waitTimer=setTimeout(()=>{if(fishing)miniMsg.textContent="Balık yaklaşıyor!"},900)}
+function finish(ok){fishing=false;mini.style.display="none";controls.enabled=true;castLine.visible=false;if(!ok){toast("The fish got away!");return}let o=currentRod===0?[70,27,3]:rods[currentRod-1][2],r=Math.random()*100,rar=r<o[0]?"Normal":r<o[0]+o[1]?"Rare":"Legendary",a=fish.filter(x=>x[1]===rar),f=a[Math.floor(Math.random()*a.length)],v=val[rar];if(!inventory[f[0]])inventory[f[0]]={rarity:rar,value:v,count:0};inventory[f[0]].count++;heldItem="rod";updateHeldItem();renderHotbar();saveState();toast(f[0]+" caught! Added to inventory.")}
+function tryCatch(){if(!fishing)return;let a=target.getBoundingClientRect(),b=dot.getBoundingClientRect(),cy=b.top+b.height/2;finish(cy>=a.top&&cy<=a.bottom)}
+$("miniTap").onclick=tryCatch;mini.addEventListener("pointerdown",e=>{if(e.target===mini)tryCatch()});
+
+const keys={};addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+let jx=0,jz=0,active=false;function joyMove(e){let r=joystick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),z=e.clientY-(r.top+r.height/2),d=Math.hypot(x,z),m=45;if(d>m){x=x/d*m;z=z/d*m}jx=x/m;jz=z/m;stick.style.transform=`translate(${x}px,${z}px)`}
+joystick.addEventListener("pointerdown",e=>{active=true;joystick.setPointerCapture(e.pointerId);joyMove(e)});joystick.addEventListener("pointermove",e=>active&&joyMove(e));joystick.addEventListener("pointerup",()=>{active=false;jx=jz=0;stick.style.transform="translate(0,0)"});
+
+async function joinRoomCode(code){
+ if(!db){roomStatus.textContent="Firebase connection unavailable.";return}
+ code=code.trim().toUpperCase();if(!code)return;
+ roomCode.textContent=code;roomCode.hidden=false;roomStatus.textContent="Connecting...";
+ try{
+  await setDoc(doc(db,"fishingRooms",code,"players",uid),{uid,x:playerGroup.position.x,z:playerGroup.position.z,color:playerMat.color.getHexString(),updatedAt:serverTimestamp()},{merge:true});
+  if(roomUnsub)roomUnsub();roomUnsub=onSnapshot(collection(db,"fishingRooms",code,"players"),snap=>{
+   players.textContent=snap.size+" player"+(snap.size===1?"":"s")+" in room";
+   snap.docChanges().forEach(ch=>{if(ch.doc.id===uid)return;let d=ch.doc.data(),o=scene.getObjectByName("other_"+ch.doc.id);if(!o){o=new THREE.Mesh(new THREE.SphereGeometry(.56,20,14),new THREE.MeshStandardMaterial({color:"#"+(d.color||"4f9cff")}));o.name="other_"+ch.doc.id;o.position.y=2.35;scene.add(o)}o.position.x=d.x||0;o.position.z=d.z||0});
+  });
+  roomStatus.textContent="Connected — share the code.";start();
+ }catch(e){console.error(e);roomStatus.textContent="Room connection was rejected by Firebase rules."}
+}
+$("confirmSell").onclick=()=>{let total=0,count=0;Object.values(inventory).forEach(v=>{count+=v.count;total+=v.value*v.count;v.count=0});money+=total;updateMoney();heldItem="rod";updateHeldItem();renderHotbar();saveState();closePanel("sellPanel");toast(`${count} fish sold for ${fmt(total)} money!`)};
+$("cancelSell").onclick=()=>closePanel("sellPanel");
+publicRoom.onclick=()=>joinRoomCode("PUBLIC-"+location.hostname.replace(/[^a-z0-9]/gi,"").slice(0,7).toUpperCase());privateRoom.onclick=()=>joinRoomCode(Math.random().toString(36).slice(2,8));joinRoomBtn.onclick=()=>joinRoomCode(roomInput.value);
+coopMenu.onclick=()=>openPanel("coopPanel");closeCoop.onclick=()=>closePanel("coopPanel");
+
+function animate(t){requestAnimationFrame(animate);let dt=Math.min(.04,(t-last)/1000);last=t;
+if(playing&&!fishing){let x=jx,z=jz;if(keys.a)x--;if(keys.d)x++;if(keys.w)z--;if(keys.s)z++;let l=Math.hypot(x,z)||1;if(Math.abs(x)+Math.abs(z)>.05){playerGroup.position.x=THREE.MathUtils.clamp(playerGroup.position.x+x/l*3.2*dt,-7.8,7.8);playerGroup.position.z=THREE.MathUtils.clamp(playerGroup.position.z+z/l*3.2*dt,-7.2,7.2)}}
+if(fishing){let speed=difficulty==="Easy"?70:difficulty==="Medium"?120:175;miniY+=dir*speed*dt;if(miniY>270){miniY=270;dir=-1}if(miniY<35){miniY=35;dir=1}dot.style.top=miniY+"px";const spot=spots[0];if(spot){const p=spot.position;const pts=[new THREE.Vector3(.35,1.9,.1),new THREE.Vector3(p.x,p.y+1.0,p.z)];castLine.geometry.setFromPoints(pts);castLine.visible=true}}
+controls.target.lerp(new THREE.Vector3(playerGroup.position.x,1.5,playerGroup.position.z),.08);controls.update();renderer.render(scene,camera)}
+addEventListener("visibilitychange",()=>{if(document.hidden)saveState()});addEventListener("beforeunload",()=>saveState());requestAnimationFrame(animate);addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body></html>
